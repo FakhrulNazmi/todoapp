@@ -4,30 +4,45 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { FlashcardType } from '../types';
 
+
 const AddCardScreen: React.FC = () => {
-  const [title, setTitle] = useState('');
-  const [answer, setAnswer] = useState('');
-  const [image, setImage] = useState<string | null>(null);
-  const [category, setCategory] = useState('');
+    const [title, setTitle] = useState('');
+    const [answer, setAnswer] = useState('');
+    const [image, setImage] = useState<string | null>(null);
+    const [category, setCategory] = useState('');
 
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Permission required", "Please grant camera roll permissions.");
-      return;
-    }
+    const [answerImage, setAnswerImage] = useState<string | null>(null);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.5,
-      allowsEditing: true,
-      base64: false,
-    });
+    const pickAnswerImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0.5,
+        });
 
-    if (!result.canceled && result.assets && result.assets[0].uri) {
-      setImage(result.assets[0].uri);
-    }
-  };
+        if (!result.canceled && result.assets && result.assets[0].uri) {
+            setAnswerImage(result.assets[0].uri);
+        }
+    };
+
+    const pickImage = async () => {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permissionResult.granted) {
+        Alert.alert("Permission required", "Please grant camera roll permissions.");
+        return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.5,
+        allowsEditing: true,
+        base64: false,
+        });
+
+        if (!result.canceled && result.assets && result.assets[0].uri) {
+        setImage(result.assets[0].uri);
+        }
+    };
 
   const saveCard = async () => {
     if (!title || !answer || !category) {
@@ -43,6 +58,7 @@ const AddCardScreen: React.FC = () => {
     const newCard: FlashcardType = {
       title: title.trim(),
       answer: answer.trim(),
+      answerImage: answerImage ?? undefined,
       image: image ?? undefined,
       category: category.trim(),
     };
@@ -51,11 +67,13 @@ const AddCardScreen: React.FC = () => {
     const cards: FlashcardType[] = json ? JSON.parse(json) : [];
     cards.push(newCard);
     await AsyncStorage.setItem('flashcards', JSON.stringify(cards));
+    
 
     setTitle('');
     setAnswer('');
     setImage(null);
     setCategory('');
+    setAnswerImage(null);
     Alert.alert('Card saved!');
   };
 
@@ -76,6 +94,10 @@ const AddCardScreen: React.FC = () => {
 
       <Button title="Pick Image" onPress={pickImage} />
       {image && <Image source={{ uri: image }} style={styles.preview} />}
+
+      <Button title="Pick Image for Answer" onPress={pickAnswerImage} />
+        {answerImage && <Image source={{ uri: answerImage }} style={styles.preview} />}
+
 
       <TextInput
         placeholder="Enter category (e.g. Animal, Flower)"

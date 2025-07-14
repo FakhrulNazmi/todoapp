@@ -3,4 +3,5 @@ export interface FlashcardType {
   answer: string;
   image?: string;
   category?: string;
+  answerImage?: string;
 }

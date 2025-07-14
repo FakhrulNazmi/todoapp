@@ -63,12 +63,14 @@ const CategoryScreen: React.FC = () => {
       <Text style={styles.title}>{category}</Text>
       {cards.map((card, index) => (
         <Flashcard
-          key={`${card.title}-${index}`}
           title={card.title}
           answer={card.answer}
           image={card.image}
+          answerImage={card.answerImage} // ✅ must be passed
           onDelete={() => handleDelete(card)}
         />
+
+
       ))}
     </ScrollView>
   );

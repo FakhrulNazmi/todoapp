@@ -1,72 +1,99 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from 'react-native';
 
 interface Props {
   title: string;
   answer: string;
-  image?: string;
-  onDelete: () => void;
-  category?: string;
+  image?: string;           // Optional image for title
+  answerImage?: string;     // Optional image for answer
+  category?: string;        // Optional category (not used here, but safe to include)
+  onDelete?: () => void;    // Optional long-press delete
 }
 
-const Flashcard: React.FC<Props> = ({ title, answer, image, onDelete }) => {
+const Flashcard: React.FC<Props> = ({
+  title,
+  answer,
+  image,
+  answerImage,
+  category,
+  onDelete,
+}) => {
   const [showAnswer, setShowAnswer] = useState(false);
 
-  const renderRightActions = () => (
-    <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
-      <Text style={styles.deleteText}>Delete</Text>
-    </TouchableOpacity>
-  );
+  const handleLongPress = () => {
+    Alert.alert('Delete this card?', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => onDelete?.(),
+      },
+    ]);
+  };
 
   return (
-    <Swipeable renderRightActions={renderRightActions}>
-      <TouchableOpacity
+    <TouchableOpacity
         style={[
-          styles.card,
-          { backgroundColor: showAnswer ? '#FFDDDD' : '#f0f044' }, // 🔄 Color changes here
+            styles.card,
+            { backgroundColor: showAnswer ? '#d0f0ff' : '#fef28a' },
         ]}
         onPress={() => setShowAnswer(!showAnswer)}
-        activeOpacity={0.9}
-      >
-        {!showAnswer && image && (
-          <Image source={{ uri: image }} style={styles.image} resizeMode="contain" />
-        )}
-        <Text style={styles.text}>{showAnswer ? answer : title}</Text>
-      </TouchableOpacity>
-    </Swipeable>
+        onLongPress={handleLongPress}
+    >
+      {showAnswer ? (
+  <>
+    {answerImage && (
+      <Image source={{ uri: answerImage }} style={styles.image} />
+    )}
+    {answer ? (
+      <Text style={styles.text}>{answer}</Text>
+    ) : !answerImage ? (
+      <Text style={[styles.text, { color: 'red' }]}>
+        No answer provided
+      </Text>
+    ) : null}
+  </>
+) : (
+  <>
+    {image && <Image source={{ uri: image }} style={styles.image} />}
+    <Text style={styles.text}>{title}</Text>
+  </>
+)}
+
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    padding: 24,
-    margin: 16,
+    padding: 20,
+    marginVertical: 10,
     borderRadius: 12,
     alignItems: 'center',
-  },
-  image: {
-    width: 100,
-    height: 100,
-    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   text: {
     fontSize: 18,
     color: '#333',
     textAlign: 'center',
   },
-  deleteButton: {
-    backgroundColor: 'red',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingHorizontal: 20,
-    marginVertical: 16,
-    marginRight: 10,
-    borderRadius: 12,
-  },
-  deleteText: {
-    color: 'white',
-    fontWeight: 'bold',
+  image: {
+    width: 150,
+    height: 150,
+    marginBottom: 10,
+    borderRadius: 10,
+    resizeMode: 'cover',
   },
 });
 
