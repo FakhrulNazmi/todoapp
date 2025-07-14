@@ -1,33 +1,30 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FlashcardType } from '../types';
-import Flashcard from '../components/Flashcard';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { FlashcardType } from '../types';
 
-// Define the same stack inline here again
 type RootStackParamList = {
   Home: undefined;
-  Flashcard: undefined;
   AddCard: undefined;
+  Category: { category: string; cards: FlashcardType[] };
 };
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 const HomeScreen: React.FC = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
-
   const [flashcards, setFlashcards] = useState<FlashcardType[]>([]);
+  const navigation = useNavigation<HomeScreenNavigationProp>();
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: 'Categories',
       headerRight: () => (
         <Text style={styles.plusButton} onPress={() => navigation.navigate('AddCard')}>
           ＋
         </Text>
       ),
-      title: 'Categories',
     });
   }, [navigation]);
 
@@ -41,7 +38,6 @@ const HomeScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation]);
 
-  // Group by category
   const grouped = flashcards.reduce<Record<string, FlashcardType[]>>((acc, card) => {
     const key = card.category?.trim() || 'Others';
     if (!acc[key]) acc[key] = [];
@@ -49,45 +45,59 @@ const HomeScreen: React.FC = () => {
     return acc;
   }, {});
 
+  const categoryList = Object.entries(grouped);
+
+  if (categoryList.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No flashcards yet. Tap ＋ to add one!</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {Object.entries(grouped).map(([category, cards]) => (
-        <View key={category} style={styles.categoryGroup}>
-          <Text style={styles.categoryTitle}>{category}</Text>
-          {cards.map((card, index) => (
-            <Flashcard
-              key={`${category}-${index}`}
-              title={card.title}
-              answer={card.answer}
-              image={card.image}
-              onDelete={async () => {
-                const updated = flashcards.filter(
-                  (c) => !(c.title === card.title && c.answer === card.answer)
-                );
-                await AsyncStorage.setItem('flashcards', JSON.stringify(updated));
-                setFlashcards(updated);
-              }}
-            />
-          ))}
-        </View>
+      {categoryList.map(([category, cards]) => (
+        <TouchableOpacity
+          key={category}
+          style={styles.categoryButton}
+          onPress={() => navigation.navigate('Category', { category, cards })}
+        >
+          <Text style={styles.categoryText}>{category}</Text>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { paddingBottom: 40 },
-  categoryGroup: { paddingHorizontal: 16, paddingTop: 20 },
-  categoryTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#555',
-  },
+  container: { padding: 16 },
   plusButton: {
     fontSize: 26,
     marginRight: 16,
     color: '#007AFF',
+  },
+  categoryButton: {
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+  },
+  categoryText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#888',
+    textAlign: 'center',
   },
 });
 
